@@ -1,0 +1,44 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+venv/
+.env/
+.venv/
+ENV/
+env/
+pip-wheel-metadata/
+
+# IDE / editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Byte-compiled / packaged
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Logs
+*.log
+
+# Coverage / test
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/
+.cache/
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Render / Deployment
+*.sqlite3
