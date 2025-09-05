@@ -8,6 +8,7 @@ import shutil
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from typing import Optional
+import jwt
 
 load_dotenv()
 
@@ -25,6 +26,19 @@ os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 templates = Jinja2Templates(directory="templates")
+
+def get_user_id(request: Request):
+    access_token = request.cookies.get("access_token")
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    try:
+        user_response = supabase.auth.get_user(access_token)
+        if user_response.user:
+            return str(user_response.user.id)
+        else:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Authentication failed")
 
 @app.get("/", response_class=HTMLResponse)
 async def auth(request: Request):
@@ -158,34 +172,41 @@ class Room(BaseModel):
     status: str = "available"
 
 @app.get("/api/rooms")
-async def get_rooms():
-    response = supabase.table('rooms').select('*').execute()
+async def get_rooms(request: Request):
+    user_id = get_user_id(request)
+    response = supabase.table('rooms').select('*').eq('user_id', user_id).execute()
     return response.data
 
 @app.post("/api/rooms")
-async def add_room(room: Room):
-    response = supabase.table('rooms').insert(room.dict()).execute()
+async def add_room(room: Room, request: Request):
+    user_id = get_user_id(request)
+    data = room.dict()
+    data['user_id'] = user_id
+    response = supabase.table('rooms').insert(data).execute()
     return response.data
 
 @app.put("/api/rooms/{room_id}")
-async def update_room(room_id: str, room: Room):
-    response = supabase.table('rooms').update(room.dict()).eq('id', room_id).execute()
+async def update_room(room_id: str, room: Room, request: Request):
+    user_id = get_user_id(request)
+    response = supabase.table('rooms').update(room.dict()).eq('id', room_id).eq('user_id', user_id).execute()
     return response.data
 
 @app.put("/api/rooms/{room_id}/toggle")
-async def toggle_room_status(room_id: str):
+async def toggle_room_status(room_id: str, request: Request):
+    user_id = get_user_id(request)
     # First, get current status
-    response = supabase.table('rooms').select('status').eq('id', room_id).execute()
+    response = supabase.table('rooms').select('status').eq('id', room_id).eq('user_id', user_id).execute()
     if not response.data:
         raise HTTPException(status_code=404, detail="Room not found")
     current_status = response.data[0]['status']
     new_status = 'occupied' if current_status == 'available' else 'available'
-    update_response = supabase.table('rooms').update({'status': new_status}).eq('id', room_id).execute()
+    update_response = supabase.table('rooms').update({'status': new_status}).eq('id', room_id).eq('user_id', user_id).execute()
     return update_response.data
 
 @app.delete("/api/rooms/{room_id}")
-async def delete_room(room_id: str):
-    response = supabase.table('rooms').delete().eq('id', room_id).execute()
+async def delete_room(room_id: str, request: Request):
+    user_id = get_user_id(request)
+    response = supabase.table('rooms').delete().eq('id', room_id).eq('user_id', user_id).execute()
     return response.data
 
 # API Endpoints for Menu Photo
@@ -195,23 +216,29 @@ class MenuPhoto(BaseModel):
     photo_url: str
 
 @app.get("/api/menu_photo")
-async def get_menu_photo():
-    response = supabase.table('menu_photo').select('*').execute()
+async def get_menu_photo(request: Request):
+    user_id = get_user_id(request)
+    response = supabase.table('menu_photo').select('*').eq('user_id', user_id).execute()
     return response.data
 
 @app.post("/api/menu_photo")
-async def add_menu_photo(item: MenuPhoto):
-    response = supabase.table('menu_photo').insert(item.dict()).execute()
+async def add_menu_photo(item: MenuPhoto, request: Request):
+    user_id = get_user_id(request)
+    data = item.dict()
+    data['user_id'] = user_id
+    response = supabase.table('menu_photo').insert(data).execute()
     return response.data
 
 @app.put("/api/menu_photo/{item_id}")
-async def update_menu_photo(item_id: str, item: MenuPhoto):
-    response = supabase.table('menu_photo').update(item.dict()).eq('id', item_id).execute()
+async def update_menu_photo(item_id: str, item: MenuPhoto, request: Request):
+    user_id = get_user_id(request)
+    response = supabase.table('menu_photo').update(item.dict()).eq('id', item_id).eq('user_id', user_id).execute()
     return response.data
 
 @app.delete("/api/menu_photo/{item_id}")
-async def delete_menu_photo(item_id: str):
-    response = supabase.table('menu_photo').delete().eq('id', item_id).execute()
+async def delete_menu_photo(item_id: str, request: Request):
+    user_id = get_user_id(request)
+    response = supabase.table('menu_photo').delete().eq('id', item_id).eq('user_id', user_id).execute()
     return response.data
 
 # API Endpoints for Menu List
@@ -221,23 +248,29 @@ class MenuList(BaseModel):
     price: float
 
 @app.get("/api/menu_list")
-async def get_menu_list():
-    response = supabase.table('menu_list').select('*').execute()
+async def get_menu_list(request: Request):
+    user_id = get_user_id(request)
+    response = supabase.table('menu_list').select('*').eq('user_id', user_id).execute()
     return response.data
 
 @app.post("/api/menu_list")
-async def add_menu_list(item: MenuList):
-    response = supabase.table('menu_list').insert(item.dict()).execute()
+async def add_menu_list(item: MenuList, request: Request):
+    user_id = get_user_id(request)
+    data = item.dict()
+    data['user_id'] = user_id
+    response = supabase.table('menu_list').insert(data).execute()
     return response.data
 
 @app.put("/api/menu_list/{item_id}")
-async def update_menu_list(item_id: str, item: MenuList):
-    response = supabase.table('menu_list').update(item.dict()).eq('id', item_id).execute()
+async def update_menu_list(item_id: str, item: MenuList, request: Request):
+    user_id = get_user_id(request)
+    response = supabase.table('menu_list').update(item.dict()).eq('id', item_id).eq('user_id', user_id).execute()
     return response.data
 
 @app.delete("/api/menu_list/{item_id}")
-async def delete_menu_list(item_id: str):
-    response = supabase.table('menu_list').delete().eq('id', item_id).execute()
+async def delete_menu_list(item_id: str, request: Request):
+    user_id = get_user_id(request)
+    response = supabase.table('menu_list').delete().eq('id', item_id).eq('user_id', user_id).execute()
     return response.data
 
 # API Endpoints for Events
@@ -248,21 +281,27 @@ class Event(BaseModel):
     time: str
 
 @app.get("/api/events")
-async def get_events():
-    response = supabase.table('events').select('*').execute()
+async def get_events(request: Request):
+    user_id = get_user_id(request)
+    response = supabase.table('events').select('*').eq('user_id', user_id).execute()
     return response.data
 
 @app.post("/api/events")
-async def add_event(event: Event):
-    response = supabase.table('events').insert(event.dict()).execute()
+async def add_event(event: Event, request: Request):
+    user_id = get_user_id(request)
+    data = event.dict()
+    data['user_id'] = user_id
+    response = supabase.table('events').insert(data).execute()
     return response.data
 
 @app.put("/api/events/{event_id}")
-async def update_event(event_id: str, event: Event):
-    response = supabase.table('events').update(event.dict()).eq('id', event_id).execute()
+async def update_event(event_id: str, event: Event, request: Request):
+    user_id = get_user_id(request)
+    response = supabase.table('events').update(event.dict()).eq('id', event_id).eq('user_id', user_id).execute()
     return response.data
 
 @app.delete("/api/events/{event_id}")
-async def delete_event(event_id: str):
-    response = supabase.table('events').delete().eq('id', event_id).execute()
+async def delete_event(event_id: str, request: Request):
+    user_id = get_user_id(request)
+    response = supabase.table('events').delete().eq('id', event_id).eq('user_id', user_id).execute()
     return response.data
