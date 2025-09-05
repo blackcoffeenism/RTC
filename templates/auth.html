@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+.auth-container {
+    max-width: 400px;
+    margin: 2rem auto;
+    background-color: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-header h1 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    font-size: 2rem;
+}
+
+.auth-toggle {
+    display: flex;
+    margin-bottom: 2rem;
+    border-radius: 6px;
+    overflow: hidden;
+    background-color: #f8f9fa;
+}
+
+.auth-toggle button {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+}
+
+.auth-toggle button.active {
+    background-color: #1abc9c;
+    color: white;
+}
+
+.auth-form {
+    display: none;
+}
+
+.auth-form.active {
+    display: block;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #34495e;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #1abc9c;
+}
+
+.btn-auth {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #1abc9c;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.btn-auth:hover {
+    background-color: #16a085;
+}
+
+.auth-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    color: #666;
+}
+
+.auth-footer a {
+    color: #1abc9c;
+    text-decoration: none;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}
+</style>
+
+<div class="auth-container">
+    <div class="auth-header">
+        <h1>Royale's Teppanyaki Capital</h1>
+        <p>Welcome to our Restaurant Management System</p>
+        {% if request.query_params.get('error') %}
+        <div class="error-message" style="color: #e74c3c; margin-top: 1rem; padding: 0.5rem; background-color: #f8d7da; border-radius: 6px; text-align: center;">
+            {% if request.query_params.get('error') == 'invalid_credentials' %}
+                Invalid email or password. Please try again.
+            {% elif request.query_params.get('error') == 'signup_failed' %}
+                Account creation failed. Please try again.
+            {% else %}
+                {{ request.query_params.get('error') }}
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="auth-toggle">
+        <button id="login-toggle" class="active">Login</button>
+        <button id="signup-toggle">Sign Up</button>
+    </div>
+
+    <form id="login-form" class="auth-form active" action="/login" method="post">
+        <div class="form-group">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" name="password" required>
+        </div>
+        <button type="submit" class="btn-auth">Login</button>
+    </form>
+
+    <form id="signup-form" class="auth-form" action="/signup" method="post">
+        <div class="form-group">
+            <label for="signup-email">Email</label>
+            <input type="email" id="signup-email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="signup-password">Password</label>
+            <input type="password" id="signup-password" name="password" required>
+        </div>
+        <div class="form-group">
+            <label for="signup-confirm-password">Confirm Password</label>
+            <input type="password" id="signup-confirm-password" name="confirm_password" required>
+        </div>
+        <button type="submit" class="btn-auth">Sign Up</button>
+    </form>
+
+    <div class="auth-footer">
+        <p>Forgot your password? <a href="/forgot-password">Reset it here</a></p>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const loginToggle = document.getElementById('login-toggle');
+    const signupToggle = document.getElementById('signup-toggle');
+    const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
+
+    loginToggle.addEventListener('click', function() {
+        loginToggle.classList.add('active');
+        signupToggle.classList.remove('active');
+        loginForm.classList.add('active');
+        signupForm.classList.remove('active');
+    });
+
+    signupToggle.addEventListener('click', function() {
+        signupToggle.classList.add('active');
+        loginToggle.classList.remove('active');
+        signupForm.classList.add('active');
+        loginForm.classList.remove('active');
+    });
+
+    // Simple password confirmation validation
+    const signupFormElement = document.getElementById('signup-form');
+    signupFormElement.addEventListener('submit', function(e) {
+        const password = document.getElementById('signup-password').value;
+        const confirmPassword = document.getElementById('signup-confirm-password').value;
+
+        if (password !== confirmPassword) {
+            e.preventDefault();
+            alert('Passwords do not match!');
+        }
+    });
+});
+</script>
+{% endblock %}

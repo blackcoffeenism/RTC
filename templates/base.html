@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Restaurant Management System</title>
+    <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{% if request.cookies.get('access_token') %}/dashboard{% else %}/{% endif %}" class="nav-logo">Royale's Teppanyaki Capital</a>
+            <ul class="nav-menu">
+                {% if request.cookies.get('access_token') %}
+                <li class="nav-item"><a href="/dashboard" class="nav-link">Dashboard</a></li>
+                <li class="nav-item"><a href="/manage" class="nav-link">Manage</a></li>
+                <li class="nav-item">
+                    <form action="/logout" method="post" style="display: inline;">
+                        <button type="submit" class="nav-link" style="background: none; border: none; color: white; cursor: pointer; font-weight: 600;">Logout</button>
+                    </form>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="edit-container">
+    <h1>Edit {{ type|capitalize }} Item</h1>
+
+    {% if error %}
+    <p style="color: red;">{{ error }}</p>
+    <a href="/manage" class="btn btn-secondary">Back to Manage</a>
+    {% else %}
+    <form id="edit-form">
+        <div id="form-fields">
+            <!-- Dynamic form fields will be inserted here -->
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="/manage" class="btn btn-secondary">Cancel</a>
+    </form>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const type = "{{ type }}";
+    const itemId = "{{ item_id }}";
+    const itemData = {{ item | tojson | safe }};
+    const formFields = document.getElementById('form-fields');
+
+    if (!formFields) {
+        return; // Form not present
+    }
+
+    if (!itemData) {
+        formFields.innerHTML = '<p>Item not found.</p>';
+        return;
+    }
+
+    // Helper to create form group
+    function createFormGroup(labelText, inputType, inputId, value, isRequired = true) {
+        const div = document.createElement('div');
+        div.className = 'form-group';
+
+        const label = document.createElement('label');
+        label.setAttribute('for', inputId);
+        label.textContent = labelText;
+
+        let input;
+        if (inputType === 'textarea') {
+            input = document.createElement('textarea');
+        } else {
+            input = document.createElement('input');
+            input.type = inputType;
+        }
+        input.id = inputId;
+        input.name = inputId;
+        input.value = value !== undefined ? value : '';
+        if (isRequired) {
+            input.required = true;
+        }
+
+        div.appendChild(label);
+        div.appendChild(input);
+        return div;
+    }
+
+    // Build form fields based on type
+    if (type === 'menu-photo') {
+        formFields.appendChild(createFormGroup('Name:', 'text', 'name', itemData.name));
+        formFields.appendChild(createFormGroup('Description:', 'textarea', 'description', itemData.description || ''));
+        formFields.appendChild(createFormGroup('Photo URL:', 'text', 'photo_url', itemData.photo_url));
+    } else if (type === 'menu-list') {
+        formFields.appendChild(createFormGroup('Title:', 'text', 'title', itemData.title));
+        formFields.appendChild(createFormGroup('Description:', 'textarea', 'description', itemData.description || ''));
+        formFields.appendChild(createFormGroup('Price:', 'number', 'price', itemData.price));
+    } else if (type === 'room') {
+        formFields.appendChild(createFormGroup('Room Number:', 'text', 'number', itemData.number));
+        // Room type select
+        const div = document.createElement('div');
+        div.className = 'form-group';
+        const label = document.createElement('label');
+        label.setAttribute('for', 'room_type');
+        label.textContent = 'Room Type:';
+        const select = document.createElement('select');
+        select.id = 'room_type';
+        select.name = 'room_type';
+        select.required = true;
+        ['VIP', 'Regular'].forEach(optionValue => {
+            const option = document.createElement('option');
+            option.value = optionValue;
+            option.textContent = optionValue;
+            if (itemData.type === optionValue) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+        div.appendChild(label);
+        div.appendChild(select);
+        formFields.appendChild(div);
+    } else if (type === 'event') {
+        formFields.appendChild(createFormGroup('Event Name:', 'text', 'name', itemData.name));
+        formFields.appendChild(createFormGroup('Venue:', 'text', 'venue', itemData.venue));
+        formFields.appendChild(createFormGroup('Date:', 'date', 'date', itemData.date));
+        formFields.appendChild(createFormGroup('Time:', 'time', 'time', itemData.time));
+    }
+
+    // Handle form submission
+    const form = document.getElementById('edit-form');
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        let updateData = {};
+        let apiEndpoint = '';
+
+        if (type === 'menu-photo') {
+            updateData = {
+                name: form.name.value,
+                description: form.description.value,
+                photo_url: form.photo_url.value
+            };
+            apiEndpoint = `/api/menu_photo/${itemId}`;
+        } else if (type === 'menu-list') {
+            updateData = {
+                title: form.title.value,
+                description: form.description.value,
+                price: parseFloat(form.price.value)
+            };
+            apiEndpoint = `/api/menu_list/${itemId}`;
+        } else if (type === 'room') {
+            updateData = {
+                number: form.number.value,
+                type: form.room_type.value,
+                status: itemData.status // keep existing status
+            };
+            apiEndpoint = `/api/rooms/${itemId}`;
+        } else if (type === 'event') {
+            updateData = {
+                name: form.name.value,
+                venue: form.venue.value,
+                date: form.date.value,
+                time: form.time.value
+            };
+            apiEndpoint = `/api/events/${itemId}`;
+        }
+
+        try {
+            const response = await fetch(apiEndpoint, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update item');
+            }
+
+            alert('Changes saved successfully.');
+            window.location.href = '/manage';
+        } catch (error) {
+            console.error('Error updating item:', error);
+            alert('Error saving changes. Please try again.');
+        }
+    });
+});
+</script>
+
+{% endblock %}

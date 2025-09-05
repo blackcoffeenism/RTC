@@ -1,0 +1,655 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="manage-container">
+    <h1>Manage</h1>
+
+    <!-- Add Cards Container -->
+    <div class="add-cards-container">
+        <!-- Add Menu Item Card -->
+        <div class="card add-menu-card">
+            <div class="card-header">
+                <h2>Add New Menu Item</h2>
+                <select id="menu-mode" class="menu-mode-dropdown">
+                    <option value="photo">Photo Menu</option>
+                    <option value="list">List Menu</option>
+                </select>
+            </div>
+            <form id="add-menu-form">
+                <div class="form-group" id="name-group">
+                    <label for="menu-name">Name:</label>
+                    <input type="text" id="menu-name" required>
+                </div>
+                <div class="form-group" id="description-group">
+                    <label for="menu-description">Description:</label>
+                    <textarea id="menu-description" required></textarea>
+                </div>
+                <div class="form-group" id="photo-group">
+                    <label for="menu-photo">Photo:</label>
+                    <input type="file" id="menu-photo" accept="image/*" required>
+                </div>
+            <div class="form-group" id="title-group" style="display: none;">
+                <label for="menu-title">Title:</label>
+                <input type="text" id="menu-title" required>
+            </div>
+            <div class="form-group" id="description-list-group" style="display: none;">
+                <label for="menu-description-list">Description:</label>
+                <textarea id="menu-description-list" required></textarea>
+            </div>
+            <div class="form-group" id="price-group" style="display: none;">
+                <label for="menu-price">Price:</label>
+                <input type="number" id="menu-price" step="0.01" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Menu Item</button>
+        </form>
+    </div>
+
+        <!-- Add Room Card -->
+        <div class="card add-room-card">
+            <h2>Add New Room</h2>
+            <form id="add-room-form">
+                <div class="form-group">
+                    <label for="room-number">Room Number:</label>
+                    <input type="text" id="room-number" required>
+                </div>
+                <div class="form-group">
+                    <label for="room-type">Room Type:</label>
+                    <select id="room-type" required>
+                        <option value="VIP">VIP</option>
+                        <option value="Regular">Regular</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Room</button>
+            </form>
+            <h3>Current Rooms</h3>
+            <div id="rooms-list" class="rooms-list">
+                <!-- Rooms will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu and Event Container -->
+    <div class="menu-and-event-container">
+        <!-- Menu Items Display -->
+        <div class="card menu-items-container">
+            <h2>Current Menu Items</h2>
+            <div id="menu-items" class="menu-items-grid">
+                <!-- Photo menu items will be dynamically added here -->
+            </div>
+        </div>
+
+        <!-- Add Upcoming Event Card -->
+        <div class="card add-event-card">
+            <h2>Add Upcoming Event</h2>
+            <form id="add-event-form">
+                <div class="form-group">
+                    <label for="event-name">Event Name:</label>
+                    <input type="text" id="event-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="event-venue">Venue:</label>
+                    <input type="text" id="event-venue" required>
+                </div>
+                <div class="form-group">
+                    <label for="event-date">Date:</label>
+                    <input type="date" id="event-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="event-time">Time:</label>
+                    <input type="time" id="event-time" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Event</button>
+            </form>
+
+            <h3>Upcoming Events</h3>
+            <div id="events-list" class="events-list">
+                <!-- Events will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Treeview for List Menu -->
+    <div class="treeview-container">
+        <h2>Menu Treeview</h2>
+        <div id="menu-treeview" class="treeview">
+            <!-- Treeview items will be dynamically added here -->
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addMenuForm = document.getElementById('add-menu-form');
+    const menuItemsContainer = document.getElementById('menu-items');
+    const menuTreeview = document.getElementById('menu-treeview');
+    const menuModeSelect = document.getElementById('menu-mode');
+    let menuItems = JSON.parse(localStorage.getItem('menuItems')) || [];
+    let treeItems = JSON.parse(localStorage.getItem('treeItems')) || [];
+
+    // Function to toggle form fields based on mode
+    function toggleFormFields(mode) {
+        const nameGroup = document.getElementById('name-group');
+        const descriptionGroup = document.getElementById('description-group');
+        const photoGroup = document.getElementById('photo-group');
+        const titleGroup = document.getElementById('title-group');
+        const priceGroup = document.getElementById('price-group');
+        const descriptionListGroup = document.getElementById('description-list-group');
+
+        if (mode === 'photo') {
+            nameGroup.style.display = 'block';
+            descriptionGroup.style.display = 'block';
+            photoGroup.style.display = 'block';
+            titleGroup.style.display = 'none';
+            priceGroup.style.display = 'none';
+            descriptionListGroup.style.display = 'none';
+            document.getElementById('menu-name').required = true;
+            document.getElementById('menu-description').required = true;
+            document.getElementById('menu-photo').required = true;
+            document.getElementById('menu-title').required = false;
+            document.getElementById('menu-price').required = false;
+            document.getElementById('menu-description-list').required = false;
+        } else {
+            nameGroup.style.display = 'none';
+            descriptionGroup.style.display = 'none';
+            photoGroup.style.display = 'none';
+            titleGroup.style.display = 'block';
+            priceGroup.style.display = 'block';
+            descriptionListGroup.style.display = 'block';
+            document.getElementById('menu-name').required = false;
+            document.getElementById('menu-description').required = false;
+            document.getElementById('menu-photo').required = false;
+            document.getElementById('menu-title').required = true;
+            document.getElementById('menu-price').required = true;
+            document.getElementById('menu-description-list').required = true;
+        }
+    }
+
+    // Initial toggle
+    toggleFormFields(menuModeSelect.value);
+
+    // Handle mode change
+    menuModeSelect.addEventListener('change', function() {
+        toggleFormFields(this.value);
+    });
+
+    // Function to fetch and render menu items (photo mode) from API
+    async function renderMenuItems() {
+        try {
+            const response = await fetch('/api/menu_photo');
+            if (!response.ok) {
+                throw new Error('Failed to fetch menu photo items');
+            }
+            const menuItems = await response.json();
+
+            menuItemsContainer.innerHTML = '';
+            if (menuItems.length === 0) {
+                menuItemsContainer.innerHTML = '<p>No menu items added yet.</p>';
+                return;
+            }
+            menuItems.forEach((item) => {
+                const menuItemDiv = document.createElement('div');
+                menuItemDiv.className = 'menu-item';
+                menuItemDiv.style.backgroundImage = `url(${item.photo_url})`;
+                menuItemDiv.style.backgroundSize = 'cover';
+                menuItemDiv.style.backgroundPosition = 'center';
+                menuItemDiv.innerHTML = `
+<div class="menu-item-overlay">${item.name}</div>
+<div class="menu-item-actions">
+<a href="/edit/menu-photo/${item.id}" class="btn btn-icon btn-edit" aria-label="Edit item" onclick="event.stopPropagation()">✏️</a>
+<button class="btn btn-icon btn-delete" onclick="event.stopPropagation(); deleteMenuItem('${item.id}')" aria-label="Delete item">🗑️</button>
+</div>
+`;
+                menuItemDiv.addEventListener('click', function() {
+                    modal.style.display = 'flex';
+                    modalImg.src = item.photo_url;
+                });
+                menuItemsContainer.appendChild(menuItemDiv);
+            });
+        } catch (error) {
+            console.error('Error fetching menu items:', error);
+            menuItemsContainer.innerHTML = '<p>Error loading menu items.</p>';
+        }
+    }
+
+    // Function to fetch and render treeview (menu list items) from API
+    async function renderTreeview() {
+        try {
+            const response = await fetch('/api/menu_list');
+            if (!response.ok) {
+                throw new Error('Failed to fetch menu list items');
+            }
+            const treeItems = await response.json();
+
+            menuTreeview.innerHTML = '';
+            if (treeItems.length === 0) {
+                menuTreeview.innerHTML = '<p>No items in treeview.</p>';
+                return;
+            }
+            const ul = document.createElement('ul');
+            ul.className = 'tree-root';
+            treeItems.forEach((item) => {
+                const li = document.createElement('li');
+                li.className = 'tree-item';
+                li.innerHTML = `
+                <span class="tree-toggle" onclick="toggleTreeItem('${item.id}')">+</span>
+                <span class="tree-text">
+                    <strong>${item.title}</strong> - ${item.description} - ₱${item.price}
+                </span>
+                <div class="tree-actions">
+                    <a href="/edit/menu-list/${item.id}" class="btn btn-icon btn-edit" aria-label="Edit item">✏️</a>
+                    <button class="btn btn-icon btn-delete" onclick="deleteTreeItem('${item.id}')" aria-label="Delete item">🗑️</button>
+                </div>
+                `;
+                ul.appendChild(li);
+            });
+            menuTreeview.appendChild(ul);
+        } catch (error) {
+            console.error('Error fetching menu list items:', error);
+            menuTreeview.innerHTML = '<p>Error loading menu list items.</p>';
+        }
+    }
+
+    // Handle form submission
+        addMenuForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const mode = menuModeSelect.value;
+
+            if (mode === 'photo') {
+                const name = document.getElementById('menu-name').value;
+                const description = document.getElementById('menu-description').value;
+                const photoFile = document.getElementById('menu-photo').files[0];
+
+                if (!photoFile) {
+                    alert('Please select a photo file.');
+                    console.error('No photo file selected.');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', photoFile);
+
+                try {
+                    const uploadResponse = await fetch('/upload-photo', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (!uploadResponse.ok) {
+                        throw new Error('Upload failed');
+                    }
+                    const uploadData = await uploadResponse.json();
+
+                    // Now insert into database via API
+                    const menuPhotoData = {
+                        name: name,
+                        description: description,
+                        photo_url: uploadData.photo_url
+                    };
+
+                    const response = await fetch('/api/menu_photo', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(menuPhotoData)
+                    });
+
+                if (!response.ok) {
+                    throw new Error('Failed to add menu photo item');
+                }
+
+                // Refresh the displayed items from API here
+                addMenuForm.reset();
+                renderMenuItems();
+                } catch (error) {
+                    console.error('Error:', error);
+                    // Removed alert per user request
+                }
+            } else {
+                const title = document.getElementById('menu-title').value;
+                const description = document.getElementById('menu-description-list').value;
+                const price = parseFloat(document.getElementById('menu-price').value);
+
+                if (isNaN(price)) {
+                    alert('Please enter a valid price.');
+                    return;
+                }
+
+                try {
+                    const menuListData = {
+                        title: title,
+                        description: description,
+                        price: price
+                    };
+
+                    const response = await fetch('/api/menu_list', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(menuListData)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to add menu list item');
+                    }
+
+                    alert('List menu item added successfully.');
+                    addMenuForm.reset();
+                    // Optionally, refresh the treeview from API here
+                } catch (error) {
+                    console.error('Error:', error);
+                    // Removed alert per user request
+                }
+                renderTreeview();
+            }
+        });
+
+
+
+    // Delete menu item (photo mode)
+    window.deleteMenuItem = async function(itemId) {
+        if (!confirm('Are you sure you want to delete this menu item?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/menu_photo/${itemId}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete menu item');
+            }
+
+            alert('Menu item deleted successfully.');
+            renderMenuItems(); // Refresh the list
+        } catch (error) {
+            console.error('Error deleting menu item:', error);
+            alert('Error deleting menu item. Please try again.');
+        }
+    };
+
+    // Toggle tree item (placeholder for expand/collapse)
+    window.toggleTreeItem = function(index) {
+        // For now, just log; can implement expand/collapse later
+        console.log('Toggle tree item', index);
+    };
+
+    // Delete tree item
+    window.deleteTreeItem = async function(itemId) {
+        if (!confirm('Are you sure you want to delete this menu list item?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/menu_list/${itemId}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete menu list item');
+            }
+
+            alert('Menu list item deleted successfully.');
+            renderTreeview(); // Refresh the list
+        } catch (error) {
+            console.error('Error deleting menu list item:', error);
+            alert('Error deleting menu list item. Please try again.');
+        }
+    };
+
+    // Initial render
+    renderMenuItems();
+    renderTreeview();
+
+    // Room management
+    const addRoomForm = document.getElementById('add-room-form');
+    const roomsList = document.getElementById('rooms-list');
+
+    // Function to fetch and render rooms from API
+    async function renderRooms() {
+        try {
+            const response = await fetch('/api/rooms');
+            if (!response.ok) {
+                throw new Error('Failed to fetch rooms');
+            }
+            const rooms = await response.json();
+
+            roomsList.innerHTML = '';
+            if (rooms.length === 0) {
+                roomsList.innerHTML = '<p>No rooms added yet.</p>';
+                return;
+            }
+            rooms.forEach((room) => {
+                const roomDiv = document.createElement('div');
+                roomDiv.className = 'room-item';
+                roomDiv.innerHTML = `
+                    <span>Room ${room.number} - ${room.type}</span>
+                    <button class="btn btn-status ${room.status === 'available' ? 'btn-available' : 'btn-occupied'}" onclick="toggleRoomStatus('${room.id}')">
+                        ${room.status === 'available' ? 'Available' : 'Occupied'}
+                    </button>
+                    <button class="btn btn-icon btn-delete" onclick="deleteRoom('${room.id}')" aria-label="Delete room">🗑️</button>
+                `;
+                roomsList.appendChild(roomDiv);
+            });
+        } catch (error) {
+            console.error('Error fetching rooms:', error);
+            roomsList.innerHTML = '<p>Error loading rooms.</p>';
+        }
+    }
+
+    // Handle room form submission
+    addRoomForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const number = document.getElementById('room-number').value;
+        const type = document.getElementById('room-type').value;
+
+        try {
+            const roomData = {
+                number: number,
+                type: type,
+                status: 'available'
+            };
+
+            const response = await fetch('/api/rooms', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(roomData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to add room');
+            }
+
+            alert('Room added successfully.');
+            addRoomForm.reset();
+            // Optionally, refresh rooms list from API here
+        } catch (error) {
+            console.error('Error:', error);
+            // Removed alert per user request
+        }
+        renderRooms();
+    });
+
+    // Toggle room status
+    window.toggleRoomStatus = async function(roomId) {
+        try {
+            const response = await fetch(`/api/rooms/${roomId}/toggle`, {
+                method: 'PUT'
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to toggle room status');
+            }
+
+            alert('Room status updated successfully.');
+            renderRooms(); // Refresh the list
+        } catch (error) {
+            console.error('Error toggling room status:', error);
+            alert('Error updating room status. Please try again.');
+        }
+    };
+
+    // Delete room
+    window.deleteRoom = async function(roomId) {
+        if (!confirm('Are you sure you want to delete this room?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/rooms/${roomId}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete room');
+            }
+
+            alert('Room deleted successfully.');
+            renderRooms(); // Refresh the list
+        } catch (error) {
+            console.error('Error deleting room:', error);
+            alert('Error deleting room. Please try again.');
+        }
+    };
+
+    // Initial render rooms
+    renderRooms();
+
+    // Upcoming Events Management
+    const addEventForm = document.getElementById('add-event-form');
+    const eventsList = document.getElementById('events-list');
+
+    // Handle event form submission
+    addEventForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const name = document.getElementById('event-name').value;
+        const venue = document.getElementById('event-venue').value;
+        const date = document.getElementById('event-date').value;
+        const time = document.getElementById('event-time').value;
+
+        try {
+            const eventData = {
+                name: name,
+                venue: venue,
+                date: date,
+                time: time
+            };
+
+            const response = await fetch('/api/events', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(eventData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to add event');
+            }
+
+            alert('Event added successfully.');
+            addEventForm.reset();
+            // Optionally, refresh events list from API here
+        } catch (error) {
+            console.error('Error:', error);
+            // Removed alert per user request
+        }
+        renderEvents();
+    });
+
+
+
+    // Delete event
+    window.deleteEvent = async function(eventId) {
+        if (!confirm('Are you sure you want to delete this event?')) {
+            return;
+        }
+        try {
+            const response = await fetch(`/api/events/${eventId}`, {
+                method: 'DELETE'
+            });
+            if (!response.ok) {
+                throw new Error('Failed to delete event');
+            }
+            renderEvents();
+        } catch (error) {
+            console.error('Error deleting event:', error);
+            alert('Error deleting event. Please try again.');
+        }
+    };
+
+    // Initial render
+    renderEvents();
+
+    // Update renderEvents to fetch from API
+    async function renderEvents() {
+        try {
+            const response = await fetch('/api/events');
+            if (!response.ok) {
+                throw new Error('Failed to fetch events');
+            }
+            const events = await response.json();
+
+            const eventsList = document.getElementById('events-list');
+            eventsList.innerHTML = '';
+            if (events.length === 0) {
+                eventsList.innerHTML = '<p>No upcoming events.</p>';
+                return;
+            }
+            events.forEach((event) => {
+                const eventDiv = document.createElement('div');
+                eventDiv.className = 'event-item';
+                eventDiv.innerHTML = `
+                    <div class="event-info">
+                        <span>🎉 ${event.name}</span>
+                        <span>${event.venue}</span>
+                        <span class="date">${event.date} ${event.time}</span>
+                    </div>
+                    <div class="event-actions">
+                        <a href="/edit/event/${event.id}" class="btn btn-icon btn-edit" aria-label="Edit event">✏️</a>
+                        <button class="btn btn-icon btn-delete" onclick="deleteEvent('${event.id}')" aria-label="Delete event">🗑️</button>
+                    </div>
+                `;
+                eventsList.appendChild(eventDiv);
+            });
+        } catch (error) {
+            console.error('Error fetching events:', error);
+            const eventsList = document.getElementById('events-list');
+            eventsList.innerHTML = '<p>Error loading events.</p>';
+        }
+    }
+});
+
+const modal = document.createElement('div');
+modal.id = 'photo-modal';
+modal.className = 'modal';
+modal.style.display = 'none';
+
+const closeSpan = document.createElement('span');
+closeSpan.className = 'close';
+closeSpan.innerHTML = '&times;';
+modal.appendChild(closeSpan);
+
+const modalImg = document.createElement('img');
+modalImg.className = 'modal-content';
+modal.appendChild(modalImg);
+
+document.body.appendChild(modal);
+
+// Close modal when clicking the close button
+closeSpan.onclick = function() {
+    modal.style.display = 'none';
+}
+
+// Close modal when clicking outside the image
+modal.onclick = function(event) {
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+}
+</script>
+
+{% endblock %}

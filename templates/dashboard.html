@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <h1>📈 Dashboard</h1>
+    <div class="dashboard-grid">
+        <!-- Client Reach Bar Graph -->
+        <div class="card">
+            <h2>📊 Client Reach This Week</h2>
+            <div class="bar-graph-container">
+                <div class="y-axis">
+                    <div>100</div>
+                    <div>75</div>
+                    <div>50</div>
+                    <div>25</div>
+                    <div>0</div>
+                </div>
+                <div class="bar-graph">
+                    <div class="bar" style="height: 60%; background-color: #4CAF50;"></div>
+                    <div class="bar" style="height: 80%; background-color: #2196F3;"></div>
+                    <div class="bar" style="height: 70%; background-color: #FF9800;"></div>
+                    <div class="bar" style="height: 90%; background-color: #F44336;"></div>
+                    <div class="bar" style="height: 75%; background-color: #9C27B0;"></div>
+                    <div class="bar" style="height: 85%; background-color: #00BCD4;"></div>
+                    <div class="bar" style="height: 50%; background-color: #8BC34A;"></div>
+                </div>
+                <div class="x-axis">
+                    <div>Mon</div>
+                    <div>Tue</div>
+                    <div>Wed</div>
+                    <div>Thu</div>
+                    <div>Fri</div>
+                    <div>Sat</div>
+                    <div>Sun</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Rooms for Reservation -->
+        <div class="card">
+            <h2>🏨 Available Rooms</h2>
+            <div id="dashboard-rooms-list" class="rooms-list">
+                <!-- Rooms will be dynamically loaded here -->
+            </div>
+        </div>
+
+        <!-- Menu Pictures -->
+        <div class="card">
+            <h2>🍽️ Menu Highlights</h2>
+            <div id="menu-highlights" class="menu-grid">
+                <!-- Menu items will be dynamically loaded here -->
+            </div>
+        </div>
+
+        <!-- Photo Modal -->
+        <div id="photo-modal" class="modal">
+            <span class="close">&times;</span>
+            <img class="modal-content" id="modal-image">
+        </div>
+
+        <!-- Upcoming Events -->
+        <div class="card">
+            <h2>📅 Upcoming Events</h2>
+            <div id="dashboard-events-list" class="events-list">
+                <!-- Events will be dynamically loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const menuHighlights = document.getElementById('menu-highlights');
+    const modal = document.getElementById('photo-modal');
+    const modalImg = document.getElementById('modal-image');
+    const closeBtn = document.getElementsByClassName('close')[0];
+
+    // Function to render menu highlights from API
+    async function renderMenuHighlights() {
+        try {
+            const response = await fetch('/api/menu_photo');
+            if (!response.ok) {
+                throw new Error('Failed to fetch menu items');
+            }
+            const menuItems = await response.json();
+
+            menuHighlights.innerHTML = '';
+            if (menuItems.length === 0) {
+                menuHighlights.innerHTML = '<p>No menu items added yet.</p>';
+                return;
+            }
+            menuItems.forEach(item => {  // Show all items
+                const menuItemDiv = document.createElement('div');
+                menuItemDiv.className = 'menu-item';
+                menuItemDiv.style.backgroundImage = `url(${item.photo_url})`;
+                menuItemDiv.style.backgroundSize = 'cover';
+                menuItemDiv.style.backgroundPosition = 'center';
+                menuItemDiv.innerHTML = `<div class="menu-item-overlay">${item.name}</div>`;
+                menuItemDiv.addEventListener('click', function() {
+                    modal.style.display = 'flex';
+                    modalImg.src = item.photo_url;
+                });
+                menuHighlights.appendChild(menuItemDiv);
+            });
+        } catch (error) {
+            console.error('Error fetching menu items:', error);
+            menuHighlights.innerHTML = '<p>Error loading menu items.</p>';
+        }
+    }
+
+    // Close modal when clicking the close button
+    closeBtn.onclick = function() {
+        modal.style.display = 'none';
+    }
+
+    // Close modal when clicking outside the image
+    modal.onclick = function(event) {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    // Function to render rooms in dashboard from API
+    async function renderDashboardRooms() {
+        try {
+            const response = await fetch('/api/rooms');
+            if (!response.ok) {
+                throw new Error('Failed to fetch rooms');
+            }
+            const rooms = await response.json();
+
+            const roomsList = document.getElementById('dashboard-rooms-list');
+            roomsList.innerHTML = '';
+            if (rooms.length === 0) {
+                roomsList.innerHTML = '<p>No rooms added yet.</p>';
+                return;
+            }
+            rooms.forEach(room => {
+                const roomDiv = document.createElement('div');
+                roomDiv.className = `room-item ${room.status}`;
+                roomDiv.innerHTML = `
+                    <span>🏰 Room ${room.number} - ${room.type}</span>
+                    <span class="status">${room.status === 'available' ? 'Available' : 'Occupied'}</span>
+                `;
+                roomsList.appendChild(roomDiv);
+            });
+        } catch (error) {
+            console.error('Error fetching rooms:', error);
+            const roomsList = document.getElementById('dashboard-rooms-list');
+            roomsList.innerHTML = '<p>Error loading rooms.</p>';
+        }
+    }
+
+    // Function to render events in dashboard from API
+    async function renderDashboardEvents() {
+        try {
+            const response = await fetch('/api/events');
+            if (!response.ok) {
+                throw new Error('Failed to fetch events');
+            }
+            const events = await response.json();
+
+            const eventsList = document.getElementById('dashboard-events-list');
+            eventsList.innerHTML = '';
+            if (events.length === 0) {
+                eventsList.innerHTML = '<p>No upcoming events.</p>';
+                return;
+            }
+            events.forEach(event => {
+                const eventDiv = document.createElement('div');
+                eventDiv.className = 'event-item';
+                eventDiv.innerHTML = `
+                    <span>🎉 ${event.name}</span>
+                    <span class="date">${event.date} ${event.time}</span>
+                `;
+                eventsList.appendChild(eventDiv);
+            });
+        } catch (error) {
+            console.error('Error fetching events:', error);
+            const eventsList = document.getElementById('dashboard-events-list');
+            eventsList.innerHTML = '<p>Error loading events.</p>';
+        }
+    }
+
+    // Initial render
+    renderMenuHighlights();
+    renderDashboardRooms();
+    renderDashboardEvents();
+
+    // Polling for real-time updates every 5 seconds
+    setInterval(() => {
+        renderMenuHighlights();
+        renderDashboardRooms();
+        renderDashboardEvents();
+    }, 5000);
+});
+</script>
+
+{% endblock %}
