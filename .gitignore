@@ -13,6 +13,11 @@ ENV/
 env/
 pip-wheel-metadata/
 
+# Environment files (secrets)
+.env
+.env.*
+*.env
+
 # IDE / editor configs
 .vscode/
 .idea/
