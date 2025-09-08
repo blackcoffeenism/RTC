@@ -131,12 +131,23 @@ async def manage(request: Request):
 
 @app.post("/upload-photo")
 async def upload_photo(file: UploadFile = File(...)):
+    # Read file content
+    file_content = await file.read()
+
     # Save the uploaded file to the uploads directory
     file_path = f"uploads/{file.filename}"
     with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    # Return the URL to access the file
-    return {"photo_url": f"/uploads/{file.filename}"}
+        buffer.write(file_content)
+
+    # Upload to Supabase storage
+    try:
+        supabase.storage.from_('files').upload(file.filename, file_content)
+        supabase_url = supabase.storage.from_('files').get_public_url(file.filename)
+    except Exception as e:
+        supabase_url = None  # Or handle error
+
+    # Return the URLs
+    return {"local_url": f"/uploads/{file.filename}", "supabase_url": supabase_url}
 
 @app.get("/edit/{type}/{item_id}", response_class=HTMLResponse)
 async def edit(request: Request, type: str, item_id: str):

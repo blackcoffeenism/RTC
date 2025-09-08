@@ -1,9 +1,14 @@
-# TODO: Implement User-Specific Data Access
+# TODO: Add File Picker for Photo Menu Editing
 
 ## Tasks
-- [x] Update schema.sql to add user_id column to tables (rooms, menu_photo, menu_list, events)
-- [x] Update RLS policies in schema.sql to restrict access to user's own data
-- [x] Modify main.py to extract user_id from access token
-- [x] Update API endpoints in main.py to filter queries by user_id
-- [x] Update API endpoints in main.py to include user_id when inserting data
-- [x] Test the changes with multiple users to ensure data isolation (User will test)
+- [x] Add file input element to menu-photo edit form in templates/edit.html
+- [x] Add JavaScript to handle file selection and upload to /upload-photo endpoint
+- [x] Update photo_url field with new uploaded image URL
+- [x] Add image preview functionality for current and new images
+- [ ] Test the file picker and image update functionality
+
+## Progress
+- [x] Read and understand current edit.html structure
+- [x] Implement file picker UI and logic
+- [x] Verify backend integration with /upload-photo endpoint
+- [x] Fix JavaScript indentation issues

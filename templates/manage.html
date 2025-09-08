@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const menuPhotoData = {
                         name: name,
                         description: description,
-                        photo_url: uploadData.photo_url
+                        photo_url: uploadData.supabase_url || uploadData.local_url
                     };
 
                     const response = await fetch('/api/menu_photo', {

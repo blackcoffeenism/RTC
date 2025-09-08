@@ -66,7 +66,39 @@ document.addEventListener('DOMContentLoaded', function() {
     if (type === 'menu-photo') {
         formFields.appendChild(createFormGroup('Name:', 'text', 'name', itemData.name));
         formFields.appendChild(createFormGroup('Description:', 'textarea', 'description', itemData.description || ''));
-        formFields.appendChild(createFormGroup('Photo URL:', 'text', 'photo_url', itemData.photo_url));
+
+        // Add image preview
+        const imgPreviewDiv = document.createElement('div');
+        imgPreviewDiv.className = 'form-group';
+        const imgLabel = document.createElement('label');
+        imgLabel.textContent = 'Current Photo:';
+        const img = document.createElement('img');
+        img.src = itemData.photo_url;
+        img.alt = 'Current Photo';
+        img.style.maxWidth = '200px';
+        img.style.display = 'block';
+        img.style.marginBottom = '10px';
+        imgPreviewDiv.appendChild(imgLabel);
+        imgPreviewDiv.appendChild(img);
+        formFields.appendChild(imgPreviewDiv);
+
+        // Add file input for new photo
+        const fileInputDiv = document.createElement('div');
+        fileInputDiv.className = 'form-group';
+        const fileInputLabel = document.createElement('label');
+        fileInputLabel.setAttribute('for', 'new_photo');
+        fileInputLabel.textContent = 'Change Photo:';
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.id = 'new_photo';
+        fileInput.name = 'new_photo';
+        fileInput.accept = 'image/*';
+        fileInputDiv.appendChild(fileInputLabel);
+        fileInputDiv.appendChild(fileInput);
+        formFields.appendChild(fileInputDiv);
+
+        // Hidden input to hold photo_url (will be updated if new photo uploaded)
+        formFields.appendChild(createFormGroup('Photo URL:', 'hidden', 'photo_url', itemData.photo_url));
     } else if (type === 'menu-list') {
         formFields.appendChild(createFormGroup('Title:', 'text', 'title', itemData.title));
         formFields.appendChild(createFormGroup('Description:', 'textarea', 'description', itemData.description || ''));
@@ -110,11 +142,36 @@ document.addEventListener('DOMContentLoaded', function() {
         let updateData = {};
         let apiEndpoint = '';
 
+        // Handle file upload if new photo selected
+        const newPhotoInput = document.getElementById('new_photo');
+        let newPhotoUrl = null;
+        if (newPhotoInput && newPhotoInput.files.length > 0) {
+            const file = newPhotoInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const uploadResponse = await fetch('/upload-photo', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!uploadResponse.ok) {
+                    throw new Error('Failed to upload photo');
+                }
+                const uploadResult = await uploadResponse.json();
+                newPhotoUrl = uploadResult.local_url || uploadResult.supabase_url;
+            } catch (uploadError) {
+                console.error('Error uploading photo:', uploadError);
+                alert('Error uploading photo. Please try again.');
+                return;
+            }
+        }
+
         if (type === 'menu-photo') {
             updateData = {
                 name: form.name.value,
                 description: form.description.value,
-                photo_url: form.photo_url.value
+                photo_url: newPhotoUrl || form.photo_url.value
             };
             apiEndpoint = `/api/menu_photo/${itemId}`;
         } else if (type === 'menu-list') {
